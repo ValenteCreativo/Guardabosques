@@ -103,36 +103,47 @@ function createScenes(k, preloadedAssets) {
 
   // ===== MUSIC =====
   const TRACKS = [
-    '/assets/Selvatic Watcher.mp3',
-    '/assets/Selvatic Watcher2.mp3',
+    '/assets/selvatic-watcher.mp3',
+    '/assets/selvatic-watcher2.mp3',
   ];
   let bgMusic = null;
   let musicStarted = false;
 
   function startMusic() {
-    if (musicStarted && bgMusic) return;
     stopMusic();
     musicStarted = true;
     try {
       const track = TRACKS[Math.floor(Math.random() * TRACKS.length)];
       bgMusic = new Audio(track);
-      bgMusic.loop = false;
       bgMusic.volume = settings.musicVolume;
-      // Random start position after metadata loads
-      bgMusic.addEventListener('loadedmetadata', () => {
-        const maxStart = Math.max(0, (bgMusic.duration || 120) - 10);
-        bgMusic.currentTime = Math.random() * Math.min(maxStart, 60);
-        bgMusic.play().catch(() => {});
-      }, { once: true });
-      // When track ends, pick the other one
+      bgMusic.loop = false;
+
+      // play() MUST be called directly inside a user gesture
+      const playPromise = bgMusic.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Once playing, jump to a random position
+            if (bgMusic && bgMusic.duration && bgMusic.duration > 10) {
+              const maxStart = bgMusic.duration - 10;
+              bgMusic.currentTime = Math.random() * Math.min(maxStart, 60);
+            }
+          })
+          .catch(err => {
+            console.warn('[music] play() blocked:', err.message);
+          });
+      }
+
       bgMusic.addEventListener('ended', () => {
         bgMusic = null;
         musicStarted = false;
-        startMusic();
+        // Don't auto-restart — next user action will trigger it
       }, { once: true });
-      // Load it (play will happen after loadedmetadata)
-      bgMusic.load();
-    } catch (e) { bgMusic = null; }
+
+    } catch (e) {
+      console.warn('[music] error:', e.message);
+      bgMusic = null;
+    }
   }
 
   function stopMusic() {
@@ -149,7 +160,6 @@ function createScenes(k, preloadedAssets) {
     if (bgMusic) bgMusic.volume = settings.musicVolume;
   }
 
-  // Music starts on first user interaction (browser autoplay policy)
   function ensureMusicStarted() {
     if (!musicStarted) startMusic();
   }
