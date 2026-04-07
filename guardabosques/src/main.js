@@ -96,9 +96,40 @@ function createScenes(k, preloadedAssets) {
   // ===== SETTINGS =====
   const settings = {
     sfxVolume: 0.5,
+    musicVolume: 0.4,
     nightMode: false,
     language: 'es',
   };
+
+  // ===== MUSIC =====
+  let bgMusic = null;
+
+  function startMusic() {
+    if (bgMusic) return; // already playing
+    try {
+      bgMusic = new Audio('/assets/Selvatic Watcher.mp3');
+      bgMusic.loop = true;
+      bgMusic.volume = settings.musicVolume;
+      bgMusic.play().catch(() => {
+        // Autoplay blocked — will start on first user interaction
+        const startOnce = () => {
+          bgMusic.play().catch(() => {});
+          window.removeEventListener('pointerdown', startOnce);
+          window.removeEventListener('touchstart', startOnce);
+        };
+        window.addEventListener('pointerdown', startOnce, { once: true });
+        window.addEventListener('touchstart', startOnce, { once: true });
+      });
+    } catch (e) { bgMusic = null; }
+  }
+
+  function setMusicVolume(v) {
+    settings.musicVolume = Math.max(0, Math.min(1, v));
+    if (bgMusic) bgMusic.volume = settings.musicVolume;
+  }
+
+  // Start music immediately
+  startMusic();
 
   const t = (key) => {
     const value = i18n[settings.language][key];
@@ -896,26 +927,45 @@ function createScenes(k, preloadedAssets) {
       const add = (o) => { objs.push(o); return o; };
       const close = () => { objs.forEach(o => k.destroy(o)); paused = false; };
 
-      add(k.add([k.rect(420, 260, { radius: 18 }), k.pos(240, 427), k.anchor('center'), k.color(10, 26, 10), k.opacity(0.95), k.z(200)]));
-      add(k.add([k.text(t('settings_title'), { size: 24 }), k.pos(240, 330), k.anchor('center'), k.color(255, 255, 255), k.z(201)]));
-      const volLabel = add(k.add([k.text(`${t('settings_volume')}: ${Math.round(settings.sfxVolume * 100)}%`, { size: 20 }), k.pos(240, 390), k.anchor('center'), k.color(230, 240, 255), k.z(201)]));
+      add(k.add([k.rect(420, 360, { radius: 18 }), k.pos(240, 427), k.anchor('center'), k.color(10, 26, 10), k.opacity(0.95), k.z(200)]));
+      add(k.add([k.text(t('settings_title'), { size: 24 }), k.pos(240, 280), k.anchor('center'), k.color(255, 255, 255), k.z(201)]));
 
-      const vd = add(k.add([k.rect(60, 40, { radius: 10 }), k.pos(140, 430), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
-      add(k.add([k.text('-', { size: 32 }), k.pos(140, 430), k.anchor('center'), k.z(202)]));
-      const vu = add(k.add([k.rect(60, 40, { radius: 10 }), k.pos(240, 430), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
-      add(k.add([k.text('+', { size: 32 }), k.pos(240, 430), k.anchor('center'), k.z(202)]));
-      const mu = add(k.add([k.rect(80, 40, { radius: 10 }), k.pos(340, 430), k.anchor('center'), k.color(120, 120, 140), k.area(), k.z(201)]));
-      add(k.add([k.text(t('settings_mute'), { size: 18 }), k.pos(340, 430), k.anchor('center'), k.z(202)]));
+      // SFX volume
+      add(k.add([k.text('SFX', { size: 16 }), k.pos(60, 330), k.anchor('left'), k.color(180, 200, 180), k.z(201)]));
+      const volLabel = add(k.add([k.text(`${Math.round(settings.sfxVolume * 100)}%`, { size: 18 }), k.pos(240, 330), k.anchor('center'), k.color(230, 240, 255), k.z(201)]));
+      const vd = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(310, 330), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
+      add(k.add([k.text('-', { size: 28 }), k.pos(310, 330), k.anchor('center'), k.z(202)]));
+      const vu = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(370, 330), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
+      add(k.add([k.text('+', { size: 28 }), k.pos(370, 330), k.anchor('center'), k.z(202)]));
+      const mu = add(k.add([k.rect(60, 36, { radius: 10 }), k.pos(430, 330), k.anchor('center'), k.color(120, 120, 140), k.area(), k.z(201)]));
+      add(k.add([k.text('🔇', { size: 20 }), k.pos(430, 330), k.anchor('center'), k.z(202)]));
 
-      vd.onClick(() => { settings.sfxVolume = Math.max(0, settings.sfxVolume - 0.1); volLabel.text = `${t('settings_volume')}: ${Math.round(settings.sfxVolume * 100)}%`; });
+      vd.onClick(() => { settings.sfxVolume = Math.max(0, settings.sfxVolume - 0.1); volLabel.text = `${Math.round(settings.sfxVolume * 100)}%`; });
       vd.onHover(() => k.setCursor('pointer')); vd.onHoverEnd(() => k.setCursor('default'));
-      vu.onClick(() => { settings.sfxVolume = Math.min(1, settings.sfxVolume + 0.1); volLabel.text = `${t('settings_volume')}: ${Math.round(settings.sfxVolume * 100)}%`; });
+      vu.onClick(() => { settings.sfxVolume = Math.min(1, settings.sfxVolume + 0.1); volLabel.text = `${Math.round(settings.sfxVolume * 100)}%`; });
       vu.onHover(() => k.setCursor('pointer')); vu.onHoverEnd(() => k.setCursor('default'));
-      mu.onClick(() => { settings.sfxVolume = 0; volLabel.text = `${t('settings_volume')}: 0%`; });
+      mu.onClick(() => { settings.sfxVolume = 0; volLabel.text = '0%'; });
       mu.onHover(() => k.setCursor('pointer')); mu.onHoverEnd(() => k.setCursor('default'));
 
-      const cb = add(k.add([k.rect(120, 44, { radius: 12 }), k.pos(240, 510), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
-      add(k.add([k.text(t('tutorial_back'), { size: 20 }), k.pos(240, 510), k.anchor('center'), k.z(202)]));
+      // Music volume
+      add(k.add([k.text('🎵', { size: 16 }), k.pos(60, 390), k.anchor('left'), k.color(180, 200, 180), k.z(201)]));
+      const musLabel = add(k.add([k.text(`${Math.round(settings.musicVolume * 100)}%`, { size: 18 }), k.pos(240, 390), k.anchor('center'), k.color(230, 240, 255), k.z(201)]));
+      const md = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(310, 390), k.anchor('center'), k.color(60, 160, 80), k.area(), k.z(201)]));
+      add(k.add([k.text('-', { size: 28 }), k.pos(310, 390), k.anchor('center'), k.z(202)]));
+      const mu2 = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(370, 390), k.anchor('center'), k.color(60, 160, 80), k.area(), k.z(201)]));
+      add(k.add([k.text('+', { size: 28 }), k.pos(370, 390), k.anchor('center'), k.z(202)]));
+      const mm = add(k.add([k.rect(60, 36, { radius: 10 }), k.pos(430, 390), k.anchor('center'), k.color(120, 120, 140), k.area(), k.z(201)]));
+      add(k.add([k.text('🔇', { size: 20 }), k.pos(430, 390), k.anchor('center'), k.z(202)]));
+
+      md.onClick(() => { setMusicVolume(settings.musicVolume - 0.1); musLabel.text = `${Math.round(settings.musicVolume * 100)}%`; });
+      md.onHover(() => k.setCursor('pointer')); md.onHoverEnd(() => k.setCursor('default'));
+      mu2.onClick(() => { setMusicVolume(settings.musicVolume + 0.1); musLabel.text = `${Math.round(settings.musicVolume * 100)}%`; });
+      mu2.onHover(() => k.setCursor('pointer')); mu2.onHoverEnd(() => k.setCursor('default'));
+      mm.onClick(() => { setMusicVolume(0); musLabel.text = '0%'; });
+      mm.onHover(() => k.setCursor('pointer')); mm.onHoverEnd(() => k.setCursor('default'));
+
+      const cb = add(k.add([k.rect(120, 44, { radius: 12 }), k.pos(240, 470), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
+      add(k.add([k.text(t('tutorial_back'), { size: 20 }), k.pos(240, 470), k.anchor('center'), k.z(202)]));
       cb.onClick(close); cb.onHover(() => k.setCursor('pointer')); cb.onHoverEnd(() => k.setCursor('default'));
     });
     settingsBtn.onHover(() => k.setCursor('pointer'));
@@ -1007,18 +1057,26 @@ function createScenes(k, preloadedAssets) {
     k.add([k.rect(460, 800, { radius: 18 }), k.pos(240, 427), k.anchor('center'), k.color(10, 26, 10), k.opacity(0.88), k.z(1)]);
     k.add([k.text(t('gameover_leaderboard'), { size: 34 }), k.pos(240, 100), k.anchor('center'), k.color(80, 220, 80), k.z(2)]);
 
-    const loadingText = k.add([k.text(t('leaderboard_loading'), { size: 20 }), k.pos(240, 300), k.anchor('center'), k.color(240, 245, 255), k.z(2)]);
+    const loadingText = k.add([k.text(t('leaderboard_loading'), { size: 20 }), k.pos(240, 420), k.anchor('center'), k.color(240, 245, 255), k.z(2)]);
 
     fetch('/api/leaderboard')
-      .then(res => res.json())
-      .then(rows => {
-        k.destroy(loadingText);
-        const lines = rows.slice(0, 10).map((r, i) => `${i + 1}. ${r.name}: ${r.score}`).join('\n');
-        k.add([k.text(lines || 'Sin registros', { size: 18, width: 420, lineSpacing: 8 }), k.pos(240, 380), k.anchor('center'), k.color(240, 245, 255), k.z(2)]);
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
       })
-      .catch(() => {
-        k.destroy(loadingText);
-        k.add([k.text(t('leaderboard_error'), { size: 20 }), k.pos(240, 300), k.anchor('center'), k.color(255, 100, 100), k.z(2)]);
+      .then(rows => {
+        if (!k.get('*').includes(loadingText)) return; // scene already changed
+        try { k.destroy(loadingText); } catch {}
+        if (!Array.isArray(rows) || rows.length === 0) {
+          k.add([k.text('Sin registros aún.\n¡Sé el primero!', { size: 20, align: 'center' }), k.pos(240, 420), k.anchor('center'), k.color(240, 245, 255), k.z(2)]);
+          return;
+        }
+        const lines = rows.slice(0, 10).map((r, i) => `${i + 1}. ${r.name}  ${r.score} pts`).join('\n');
+        k.add([k.text(lines, { size: 18, width: 420, lineSpacing: 10 }), k.pos(240, 420), k.anchor('center'), k.color(240, 245, 255), k.z(2)]);
+      })
+      .catch(err => {
+        try { k.destroy(loadingText); } catch {}
+        k.add([k.text(`${t('leaderboard_error')}\n${err.message}`, { size: 18, width: 400, align: 'center' }), k.pos(240, 420), k.anchor('center'), k.color(255, 120, 120), k.z(2)]);
       });
 
     const backBtn = k.add([k.rect(200, 48, { radius: 14 }), k.pos(240, 760), k.anchor('center'), k.color(255, 104, 60), k.outline(3, k.rgb(255, 220, 140)), k.area(), k.z(3)]);
