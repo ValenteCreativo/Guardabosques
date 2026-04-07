@@ -164,6 +164,13 @@ function createScenes(k, preloadedAssets) {
     if (!musicStarted) startMusic();
   }
 
+  // Native DOM listener — fires on the very first tap/click anywhere on the page.
+  // This is the only reliable way to satisfy browser autoplay policy.
+  document.addEventListener('pointerdown', function onFirstGesture() {
+    document.removeEventListener('pointerdown', onFirstGesture);
+    ensureMusicStarted();
+  });
+
   const t = (key) => {
     const value = i18n[settings.language][key];
     return typeof value === 'function' ? value : (value || key);
@@ -301,6 +308,28 @@ function createScenes(k, preloadedAssets) {
     nightBtn.onClick(() => { settings.nightMode = !settings.nightMode; k.go('menu'); });
     nightBtn.onHover(() => k.setCursor('pointer'));
     nightBtn.onHoverEnd(() => k.setCursor('default'));
+
+    // Music mute toggle (left of night button)
+    const musicBtn = k.add([
+      k.rect(50, 50, { radius: 25 }), k.pos(390, 30), k.anchor('center'),
+      k.color(100, 100, 120), k.outline(2, k.rgb(180, 180, 200)), k.area(), k.z(100),
+    ]);
+    const musicBtnLabel = k.add([
+      k.text(settings.musicVolume === 0 ? '🔇' : '🎵', { size: 26 }),
+      k.pos(390, 30), k.anchor('center'), k.z(101),
+    ]);
+    musicBtn.onClick(() => {
+      if (settings.musicVolume > 0) {
+        settings._prevMusicVolume = settings.musicVolume;
+        setMusicVolume(0);
+        musicBtnLabel.text = '🔇';
+      } else {
+        setMusicVolume(settings._prevMusicVolume || 0.4);
+        musicBtnLabel.text = '🎵';
+      }
+    });
+    musicBtn.onHover(() => k.setCursor('pointer'));
+    musicBtn.onHoverEnd(() => k.setCursor('default'));
 
     // Language toggle (top-left)
     const langBtn = k.add([
@@ -961,45 +990,55 @@ function createScenes(k, preloadedAssets) {
       const add = (o) => { objs.push(o); return o; };
       const close = () => { objs.forEach(o => k.destroy(o)); paused = false; };
 
-      add(k.add([k.rect(420, 360, { radius: 18 }), k.pos(240, 427), k.anchor('center'), k.color(10, 26, 10), k.opacity(0.95), k.z(200)]));
-      add(k.add([k.text(t('settings_title'), { size: 24 }), k.pos(240, 280), k.anchor('center'), k.color(255, 255, 255), k.z(201)]));
+      // Modal background — tall enough for all rows
+      add(k.add([k.rect(340, 380, { radius: 18 }), k.pos(240, 427), k.anchor('center'), k.color(10, 26, 10), k.opacity(0.96), k.z(200)]));
+      add(k.add([k.text(t('settings_title'), { size: 22 }), k.pos(240, 270), k.anchor('center'), k.color(255, 255, 255), k.z(201)]));
 
-      // SFX volume
-      add(k.add([k.text('SFX', { size: 16 }), k.pos(60, 330), k.anchor('left'), k.color(180, 200, 180), k.z(201)]));
-      const volLabel = add(k.add([k.text(`${Math.round(settings.sfxVolume * 100)}%`, { size: 18 }), k.pos(240, 330), k.anchor('center'), k.color(230, 240, 255), k.z(201)]));
-      const vd = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(310, 330), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
-      add(k.add([k.text('-', { size: 28 }), k.pos(310, 330), k.anchor('center'), k.z(202)]));
-      const vu = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(370, 330), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
-      add(k.add([k.text('+', { size: 28 }), k.pos(370, 330), k.anchor('center'), k.z(202)]));
-      const mu = add(k.add([k.rect(60, 36, { radius: 10 }), k.pos(430, 330), k.anchor('center'), k.color(120, 120, 140), k.area(), k.z(201)]));
-      add(k.add([k.text('🔇', { size: 20 }), k.pos(430, 330), k.anchor('center'), k.z(202)]));
+      // Helper: one row with label | value | - | + | mute
+      function volRow(label, getVal, onDown, onUp, onMute, y) {
+        add(k.add([k.text(label, { size: 16 }), k.pos(90, y), k.anchor('center'), k.color(180, 210, 180), k.z(201)]));
+        const valLbl = add(k.add([k.text(`${Math.round(getVal() * 100)}%`, { size: 16 }), k.pos(175, y), k.anchor('center'), k.color(230, 240, 255), k.z(201)]));
 
-      vd.onClick(() => { settings.sfxVolume = Math.max(0, settings.sfxVolume - 0.1); volLabel.text = `${Math.round(settings.sfxVolume * 100)}%`; });
-      vd.onHover(() => k.setCursor('pointer')); vd.onHoverEnd(() => k.setCursor('default'));
-      vu.onClick(() => { settings.sfxVolume = Math.min(1, settings.sfxVolume + 0.1); volLabel.text = `${Math.round(settings.sfxVolume * 100)}%`; });
-      vu.onHover(() => k.setCursor('pointer')); vu.onHoverEnd(() => k.setCursor('default'));
-      mu.onClick(() => { settings.sfxVolume = 0; volLabel.text = '0%'; });
-      mu.onHover(() => k.setCursor('pointer')); mu.onHoverEnd(() => k.setCursor('default'));
+        const btnMinus = add(k.add([k.rect(36, 36, { radius: 8 }), k.pos(220, y), k.anchor('center'), k.color(80, 80, 100), k.area(), k.z(201)]));
+        add(k.add([k.text('−', { size: 22 }), k.pos(220, y), k.anchor('center'), k.color(255, 255, 255), k.z(202)]));
 
-      // Music volume
-      add(k.add([k.text('🎵', { size: 16 }), k.pos(60, 390), k.anchor('left'), k.color(180, 200, 180), k.z(201)]));
-      const musLabel = add(k.add([k.text(`${Math.round(settings.musicVolume * 100)}%`, { size: 18 }), k.pos(240, 390), k.anchor('center'), k.color(230, 240, 255), k.z(201)]));
-      const md = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(310, 390), k.anchor('center'), k.color(60, 160, 80), k.area(), k.z(201)]));
-      add(k.add([k.text('-', { size: 28 }), k.pos(310, 390), k.anchor('center'), k.z(202)]));
-      const mu2 = add(k.add([k.rect(50, 36, { radius: 10 }), k.pos(370, 390), k.anchor('center'), k.color(60, 160, 80), k.area(), k.z(201)]));
-      add(k.add([k.text('+', { size: 28 }), k.pos(370, 390), k.anchor('center'), k.z(202)]));
-      const mm = add(k.add([k.rect(60, 36, { radius: 10 }), k.pos(430, 390), k.anchor('center'), k.color(120, 120, 140), k.area(), k.z(201)]));
-      add(k.add([k.text('🔇', { size: 20 }), k.pos(430, 390), k.anchor('center'), k.z(202)]));
+        const btnPlus = add(k.add([k.rect(36, 36, { radius: 8 }), k.pos(264, y), k.anchor('center'), k.color(80, 80, 100), k.area(), k.z(201)]));
+        add(k.add([k.text('+', { size: 22 }), k.pos(264, y), k.anchor('center'), k.color(255, 255, 255), k.z(202)]));
 
-      md.onClick(() => { setMusicVolume(settings.musicVolume - 0.1); musLabel.text = `${Math.round(settings.musicVolume * 100)}%`; });
-      md.onHover(() => k.setCursor('pointer')); md.onHoverEnd(() => k.setCursor('default'));
-      mu2.onClick(() => { setMusicVolume(settings.musicVolume + 0.1); musLabel.text = `${Math.round(settings.musicVolume * 100)}%`; });
-      mu2.onHover(() => k.setCursor('pointer')); mu2.onHoverEnd(() => k.setCursor('default'));
-      mm.onClick(() => { setMusicVolume(0); musLabel.text = '0%'; });
-      mm.onHover(() => k.setCursor('pointer')); mm.onHoverEnd(() => k.setCursor('default'));
+        const btnMute = add(k.add([k.rect(36, 36, { radius: 8 }), k.pos(308, y), k.anchor('center'), k.color(80, 80, 100), k.area(), k.z(201)]));
+        add(k.add([k.text('🔇', { size: 18 }), k.pos(308, y), k.anchor('center'), k.z(202)]));
 
-      const cb = add(k.add([k.rect(120, 44, { radius: 12 }), k.pos(240, 470), k.anchor('center'), k.color(255, 104, 60), k.area(), k.z(201)]));
-      add(k.add([k.text(t('tutorial_back'), { size: 20 }), k.pos(240, 470), k.anchor('center'), k.z(202)]));
+        btnMinus.onClick(() => { onDown(); valLbl.text = `${Math.round(getVal() * 100)}%`; });
+        btnMinus.onHover(() => k.setCursor('pointer')); btnMinus.onHoverEnd(() => k.setCursor('default'));
+        btnPlus.onClick(() => { onUp(); valLbl.text = `${Math.round(getVal() * 100)}%`; });
+        btnPlus.onHover(() => k.setCursor('pointer')); btnPlus.onHoverEnd(() => k.setCursor('default'));
+        btnMute.onClick(() => { onMute(); valLbl.text = `${Math.round(getVal() * 100)}%`; });
+        btnMute.onHover(() => k.setCursor('pointer')); btnMute.onHoverEnd(() => k.setCursor('default'));
+      }
+
+      // SFX row
+      volRow(
+        'SFX',
+        () => settings.sfxVolume,
+        () => { settings.sfxVolume = Math.max(0, settings.sfxVolume - 0.1); },
+        () => { settings.sfxVolume = Math.min(1, settings.sfxVolume + 0.1); },
+        () => { settings.sfxVolume = 0; },
+        350
+      );
+
+      // Music row
+      volRow(
+        '🎵 Música',
+        () => settings.musicVolume,
+        () => setMusicVolume(settings.musicVolume - 0.1),
+        () => setMusicVolume(settings.musicVolume + 0.1),
+        () => setMusicVolume(0),
+        410
+      );
+
+      // Close button
+      const cb = add(k.add([k.rect(160, 44, { radius: 12 }), k.pos(240, 490), k.anchor('center'), k.color(255, 104, 60), k.outline(3, k.rgb(255, 220, 140)), k.area(), k.z(201)]));
+      add(k.add([k.text(t('tutorial_back'), { size: 20 }), k.pos(240, 490), k.anchor('center'), k.color(255, 255, 255), k.z(202)]));
       cb.onClick(close); cb.onHover(() => k.setCursor('pointer')); cb.onHoverEnd(() => k.setCursor('default'));
     });
     settingsBtn.onHover(() => k.setCursor('pointer'));
