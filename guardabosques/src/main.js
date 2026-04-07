@@ -118,31 +118,36 @@ function createScenes(k, preloadedAssets) {
       bgMusic.volume = settings.musicVolume;
       bgMusic.loop = false;
 
-      // play() MUST be called directly inside a user gesture
+      // Call play() synchronously inside the gesture — iOS requires this.
+      // Set random currentTime after canplay fires (async is fine for seek, not for play).
       const playPromise = bgMusic.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            // Once playing, jump to a random position
-            if (bgMusic && bgMusic.duration && bgMusic.duration > 10) {
-              const maxStart = bgMusic.duration - 10;
-              bgMusic.currentTime = Math.random() * Math.min(maxStart, 60);
-            }
+            // Seek to random position once enough data is loaded
+            bgMusic.addEventListener('canplay', () => {
+              if (bgMusic && bgMusic.duration > 10) {
+                bgMusic.currentTime = Math.random() * Math.min(bgMusic.duration - 5, 60);
+              }
+            }, { once: true });
           })
           .catch(err => {
             console.warn('[music] play() blocked:', err.message);
+            musicStarted = false;
           });
       }
 
       bgMusic.addEventListener('ended', () => {
         bgMusic = null;
         musicStarted = false;
-        // Don't auto-restart — next user action will trigger it
+        // Auto-restart with the other track
+        startMusic();
       }, { once: true });
 
     } catch (e) {
       console.warn('[music] error:', e.message);
       bgMusic = null;
+      musicStarted = false;
     }
   }
 
@@ -166,10 +171,16 @@ function createScenes(k, preloadedAssets) {
 
   // Native DOM listener — fires on the very first tap/click anywhere on the page.
   // This is the only reliable way to satisfy browser autoplay policy.
-  document.addEventListener('pointerdown', function onFirstGesture() {
+  // iOS requires touchstart/touchend, desktop needs pointerdown/mousedown.
+  function onFirstGesture() {
     document.removeEventListener('pointerdown', onFirstGesture);
+    document.removeEventListener('touchstart', onFirstGesture);
+    document.removeEventListener('touchend', onFirstGesture);
     ensureMusicStarted();
-  });
+  }
+  document.addEventListener('pointerdown', onFirstGesture, { passive: true });
+  document.addEventListener('touchstart', onFirstGesture, { passive: true });
+  document.addEventListener('touchend', onFirstGesture, { passive: true });
 
   const t = (key) => {
     const value = i18n[settings.language][key];
