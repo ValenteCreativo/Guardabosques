@@ -107,39 +107,41 @@ function createScenes(k, preloadedAssets) {
     '/assets/Selvatic Watcher2.mp3',
   ];
   let bgMusic = null;
+  let musicStarted = false;
 
   function startMusic() {
+    if (musicStarted && bgMusic) return;
     stopMusic();
+    musicStarted = true;
     try {
       const track = TRACKS[Math.floor(Math.random() * TRACKS.length)];
       bgMusic = new Audio(track);
       bgMusic.loop = false;
       bgMusic.volume = settings.musicVolume;
-      // Start at a random position (up to 60s in)
+      // Random start position after metadata loads
       bgMusic.addEventListener('loadedmetadata', () => {
         const maxStart = Math.max(0, (bgMusic.duration || 120) - 10);
         bgMusic.currentTime = Math.random() * Math.min(maxStart, 60);
+        bgMusic.play().catch(() => {});
       }, { once: true });
       // When track ends, pick the other one
-      bgMusic.addEventListener('ended', () => { bgMusic = null; startMusic(); }, { once: true });
-      bgMusic.play().catch(() => {
-        const startOnce = () => {
-          if (bgMusic) bgMusic.play().catch(() => {});
-          window.removeEventListener('pointerdown', startOnce);
-          window.removeEventListener('touchstart', startOnce);
-        };
-        window.addEventListener('pointerdown', startOnce, { once: true });
-        window.addEventListener('touchstart', startOnce, { once: true });
-      });
+      bgMusic.addEventListener('ended', () => {
+        bgMusic = null;
+        musicStarted = false;
+        startMusic();
+      }, { once: true });
+      // Load it (play will happen after loadedmetadata)
+      bgMusic.load();
     } catch (e) { bgMusic = null; }
   }
 
   function stopMusic() {
     if (bgMusic) {
-      bgMusic.pause();
+      try { bgMusic.pause(); } catch {}
       bgMusic.src = '';
       bgMusic = null;
     }
+    musicStarted = false;
   }
 
   function setMusicVolume(v) {
@@ -147,8 +149,10 @@ function createScenes(k, preloadedAssets) {
     if (bgMusic) bgMusic.volume = settings.musicVolume;
   }
 
-  // Start music immediately
-  startMusic();
+  // Music starts on first user interaction (browser autoplay policy)
+  function ensureMusicStarted() {
+    if (!musicStarted) startMusic();
+  }
 
   const t = (key) => {
     const value = i18n[settings.language][key];
@@ -318,10 +322,10 @@ function createScenes(k, preloadedAssets) {
     const playBtnH = 70;
 
     // CÓMO JUGAR — just above JUGAR
-    makeBtn(k, t('menu_how_to_play'), 240, playBtnY - playBtnH - 14, 260, 52, () => k.go('tutorial'), k.rgb(60, 140, 200));
+    makeBtn(k, t('menu_how_to_play'), 240, playBtnY - playBtnH - 14, 260, 52, () => { ensureMusicStarted(); k.go('tutorial'); }, k.rgb(60, 140, 200));
 
     // JUGAR — big, prominent
-    makeBtn(k, t('menu_play'), 240, playBtnY, 260, playBtnH, () => k.go('game'), k.rgb(255, 104, 60));
+    makeBtn(k, t('menu_play'), 240, playBtnY, 260, playBtnH, () => { ensureMusicStarted(); k.go('game'); }, k.rgb(255, 104, 60));
 
     // Guardabosques character — fills space between logo and buttons
     if (guardaData) {
