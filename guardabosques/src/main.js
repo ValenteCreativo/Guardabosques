@@ -364,7 +364,7 @@ function createScenes(k, preloadedAssets) {
     // High score (below logo)
     const hs = loadHighScore();
     if (hs > 0) {
-      k.add([k.text(t('menu_high_score')(hs), { size: 18 }), k.pos(240, logoY + 80), k.anchor('center'), k.color(255, 220, 140), k.z(2)]);
+      k.add([k.text(t('menu_high_score')(hs), { size: 18 }), k.pos(240, logoY + 110), k.anchor('center'), k.color(0, 0, 0), k.z(2)]);
     }
 
     // JUGAR button — y=770
@@ -379,11 +379,11 @@ function createScenes(k, preloadedAssets) {
 
     // Guardabosques character — fills space between logo and buttons
     if (guardaData) {
-      const maxW = 480 * 0.80;
-      const maxH = playBtnY - playBtnH / 2 - (logoY + 80) - 10;
+      const maxW = 480 * 0.60;
+      const maxH = playBtnY - playBtnH / 2 - (logoY + 110) - 10;
       const scale = Math.min(maxW / guardaData.width, maxH / guardaData.height);
       const charH = guardaData.height * scale;
-      const charY = (logoY + 80) + charH / 2 + 8;
+      const charY = (logoY + 110) + charH / 2 + 8;
       k.add([k.sprite('guardabosques'), k.pos(240, charY), k.anchor('center'), k.scale(scale), k.z(3)]);
     }
 
