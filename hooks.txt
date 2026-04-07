@@ -1,0 +1,54 @@
+PROJECT: Guardabosques - Hooks & Validation
+
+PURPOSE:
+Automatizar validaciones para asegurar estabilidad, calidad y consistencia durante el desarrollo.
+
+PRE-BUILD HOOKS:
+- Validar que no haya errores de sintaxis
+- Ejecutar type checking si aplica
+- Verificar imports válidos
+- Asegurar que no existan variables undefined
+
+BUILD VALIDATION:
+- El proyecto debe compilar sin errores
+- El juego debe iniciar correctamente
+- No debe haber crashes al cargar escenas
+
+RUNTIME VALIDATIONS:
+- treeHealth nunca debe ser NaN o undefined
+- score siempre debe ser numérico
+- enemigos deben eliminarse correctamente al ser cortados
+- no deben existir entidades huérfanas en escena
+
+GAME LOOP CHECKS:
+- enemigos se generan correctamente
+- enemigos se mueven hacia el centro
+- colisiones funcionan correctamente
+- daño al árbol se aplica correctamente
+- game over se activa cuando treeHealth <= 0
+
+PERFORMANCE CHECKS:
+- no hay caídas severas de FPS
+- número de entidades controlado
+- no hay memory leaks evidentes
+
+PERSISTENCE CHECK:
+- high score se guarda correctamente
+- high score se carga correctamente al iniciar
+
+UI VALIDATION:
+- pantalla de inicio visible
+- score visible y actualizado
+- feedback visual presente en acciones clave
+
+ERROR HANDLING:
+- evitar crashes por valores inesperados
+- manejar estados inválidos de forma segura
+
+DEV FLOW:
+- validar cada cambio antes de continuar
+- no acumular múltiples cambios sin probar
+- mantener siempre una versión jugable
+
+GOAL:
+Garantizar que el juego siempre esté en estado funcional, estable y presentable.

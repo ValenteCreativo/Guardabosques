@@ -1,0 +1,24 @@
+{
+  "name": "guardabosques",
+  "version": "1.0.0",
+  "description": "Juego 2D de defensa tipo slicing - protege el árbol de enemigos contaminantes",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest --run"
+  },
+  "keywords": ["game", "arcade", "ecology", "education"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "kaplay": "^3001.0.19",
+    "vite": "^7.3.1"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "fast-check": "^3.22.0"
+  }
+}

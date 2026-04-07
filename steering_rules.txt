@@ -1,0 +1,48 @@
+PROJECT: Guardabosques - Steering Rules
+
+GENERAL PRINCIPLES:
+- Mantener el juego simple, claro y estable
+- No agregar complejidad innecesaria
+- Priorizar jugabilidad sobre features nuevas
+- Cada cambio debe ser incremental y validado
+
+GAMEPLAY RULES:
+- El sistema de slicing existente NO debe romperse
+- El árbol es el núcleo del juego (treeHealth siempre consistente)
+- Los enemigos SIEMPRE deben moverse hacia el árbol
+- El game loop debe ser claro: spawn → attack → damage → repeat
+- El juego debe ser entendible en menos de 10 segundos
+
+CODE STRUCTURE:
+- Separar lógica por módulos (player, enemies, gameState, UI)
+- Evitar funciones monolíticas grandes
+- Usar nombres claros y consistentes
+- Mantener el código legible y fácil de modificar
+
+STATE MANAGEMENT:
+- Centralizar variables clave (treeHealth, score, gameOver)
+- Evitar duplicación de estado
+- Validar siempre cambios de estado críticos
+
+PERFORMANCE:
+- Mantener render fluido (objetivo: 60fps)
+- Limitar cantidad de entidades activas si es necesario
+- Evitar cálculos innecesarios en loops
+
+FEATURE CONTROL:
+- No introducir nuevas mecánicas sin validar impacto
+- Reutilizar sistemas existentes antes de crear nuevos
+- Cada feature nueva debe tener propósito claro
+
+PERSISTENCE:
+- Usar localStorage solo para high score
+- No complicar persistencia innecesariamente
+
+VISUAL FEEDBACK:
+- Toda acción debe tener feedback visual claro
+- Daño al árbol debe ser evidente
+- Cortes deben sentirse satisfactorios
+
+CONSTRAINT:
+- Si una implementación rompe estabilidad, revertir
+- Siempre priorizar versión jugable sobre versión compleja

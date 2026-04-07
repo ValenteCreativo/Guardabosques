@@ -1,0 +1,55 @@
+PROJECT: Guardabosques
+
+CORE IDEA:
+Juego 2D de defensa tipo slicing donde el jugador protege un árbol de oleadas de enemigos contaminantes.
+
+CORE LOOP:
+- Enemigos aparecen y se mueven hacia el árbol
+- El jugador los elimina usando slicing
+- Si llegan al árbol, le hacen daño
+- El jugador gana puntos por eliminarlos
+- El juego escala en dificultad con el tiempo
+
+PLAYER:
+- Guardabosques
+- Arma: machete (slicing)
+
+TREE SYSTEM:
+- Variable: treeHealth = 100
+- Daño cuando enemigo llega al centro
+- Game over cuando llega a 0
+
+ENEMIES (basados en sistema existente):
+1. Humo (lento)
+2. Talador (directo)
+3. Barril tóxico (más vida)
+4. Fábrica (grande)
+5. Toxic blob (movimiento errático)
+
+POWERUPS (re-skin de sistema actual):
+1. Slice más grande
+2. Velocidad de ataque
+3. Explosión al cortar
+4. Regeneración del árbol
+5. Slow a enemigos
+
+PROGRESSION:
+- Spawn rate aumenta con el tiempo
+- Dificultad progresiva
+- Powerups aparecen como en sistema actual
+
+PERSISTENCE:
+- Guardar high score con localStorage
+
+VISUAL FEEDBACK:
+- Partículas verdes al cortar
+- Flash rojo cuando el árbol recibe daño
+- Feedback claro de impacto
+
+GOAL:
+Juego estable, claro, rápido de entender y rejugable
+
+CONSTRAINTS:
+- No romper sistema de slicing existente
+- Mantener código modular
+- Priorizar estabilidad sobre features nuevas
