@@ -102,18 +102,29 @@ function createScenes(k, preloadedAssets) {
   };
 
   // ===== MUSIC =====
+  const TRACKS = [
+    '/assets/Selvatic Watcher.mp3',
+    '/assets/Selvatic Watcher2.mp3',
+  ];
   let bgMusic = null;
 
   function startMusic() {
-    if (bgMusic) return; // already playing
+    stopMusic();
     try {
-      bgMusic = new Audio('/assets/Selvatic Watcher.mp3');
-      bgMusic.loop = true;
+      const track = TRACKS[Math.floor(Math.random() * TRACKS.length)];
+      bgMusic = new Audio(track);
+      bgMusic.loop = false;
       bgMusic.volume = settings.musicVolume;
+      // Start at a random position (up to 60s in)
+      bgMusic.addEventListener('loadedmetadata', () => {
+        const maxStart = Math.max(0, (bgMusic.duration || 120) - 10);
+        bgMusic.currentTime = Math.random() * Math.min(maxStart, 60);
+      }, { once: true });
+      // When track ends, pick the other one
+      bgMusic.addEventListener('ended', () => { bgMusic = null; startMusic(); }, { once: true });
       bgMusic.play().catch(() => {
-        // Autoplay blocked — will start on first user interaction
         const startOnce = () => {
-          bgMusic.play().catch(() => {});
+          if (bgMusic) bgMusic.play().catch(() => {});
           window.removeEventListener('pointerdown', startOnce);
           window.removeEventListener('touchstart', startOnce);
         };
@@ -121,6 +132,14 @@ function createScenes(k, preloadedAssets) {
         window.addEventListener('touchstart', startOnce, { once: true });
       });
     } catch (e) { bgMusic = null; }
+  }
+
+  function stopMusic() {
+    if (bgMusic) {
+      bgMusic.pause();
+      bgMusic.src = '';
+      bgMusic = null;
+    }
   }
 
   function setMusicVolume(v) {
@@ -579,6 +598,7 @@ function createScenes(k, preloadedAssets) {
     }
 
     function endGame() {
+      stopMusic();
       saveHighScore(score);
       k.go('gameover', { score, highScore: loadHighScore() });
     }

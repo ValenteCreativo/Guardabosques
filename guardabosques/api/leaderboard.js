@@ -1,10 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req) {
+export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   if (req.method === 'GET') {
@@ -15,32 +11,27 @@ export default async function handler(req) {
         ORDER BY score DESC
         LIMIT 50
       `;
-      return new Response(JSON.stringify(rows), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(200).json(rows);
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+      return res.status(500).json({ error: err.message });
     }
   }
 
   if (req.method === 'POST') {
     try {
-      const { name, score } = await req.json();
+      const { name, score } = req.body;
       if (!name || typeof score !== 'number') {
-        return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400 });
+        return res.status(400).json({ error: 'Invalid input' });
       }
-
       await sql`
         INSERT INTO guardabosques_leaderboard (name, score)
-        VALUES (${name.substring(0, 20)}, ${score})
+        VALUES (${name.substring(0, 20)}, ${Math.round(score)})
       `;
-
-      return new Response(JSON.stringify({ success: true }), { status: 201 });
+      return res.status(201).json({ success: true });
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+      return res.status(500).json({ error: err.message });
     }
   }
 
-  return new Response('Method not allowed', { status: 405 });
+  return res.status(405).json({ error: 'Method not allowed' });
 }
